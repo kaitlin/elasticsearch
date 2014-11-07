@@ -119,19 +119,23 @@
 <pre><code class="lang-sh">{<span class="hljs-string">"took"</span>:<span class="hljs-number">2008</span>,<span class="hljs-string">"errors"</span>:<span class="hljs-literal">false</span>,<span class="hljs-string">"items"</span>:[{<span class="hljs-string">"index"</span>:{<span class="hljs-string">"_index"</span>:<span class="hljs-string">"pride"</span>,<span class="hljs-string">"_type"</span>:<span class="hljs-string">"chapter"</span>,<span class="hljs-string">"_id"</span>:<span class="hljs-string">"1"</span>,<span class="hljs-string">"_version"</span>:<span class="hljs-number">1</span>,<span class="hljs-string">"status"</span>:<span class="hljs-number">201</span>}},{<span class="hljs-string">"index"</span>:{<span class="hljs-string">"_index"</span>:<span class="hljs-string">"pride"</span>,<span class="hljs-string">"_type"</span>:<span class="hljs-string">"chapter"</span>,<span class="hljs-string">"_id"</span>:<span class="hljs-string">"2"</span>,<span class="hljs-string">"_version"</span>:<span class="hljs-number">1</span>,<span class="hljs-string">"status"</span>:<span class="hljs-number">201</span>}},{<span class="hljs-string">"index"</span>:{<span class="hljs-string">"_index"</span>:<span class="hljs-string">"pride"</span>,<span class="hljs-string">"_type"</span>:<span class="hljs-string">"chapter"</span>,<span class="hljs-string">"_id"</span>:<span class="hljs-string">"3"</span>,<span class="hljs-string">"_version"</span>:<span class="hljs-number">1</span>,<span class="hljs-string">"status"</span>:<span class="hljs-number">201</span>}},....
 </code></pre>
 <p>The response is JSON object that tells you no errors occured, and it enumerates the items that were inserted into Elasticsearch under the <code>items</code> key. Now we have some data to query.</p>
+<h2 id="getting-data-out-of-elasticsearch">Getting Data Out of Elasticsearch</h2>
+<p>There are two main ways to fetch data from Elasticsearch. One is queries, and the other is filters. In general, queries should be used when you are doing a search on text or need to order results by relevance, and filters should be used when you want to filter on an exact value, or for binary(true/false) searches. You can also combine these types if you need to search within a filtered result set, or filter on a set of search results.</p>
 <h3 id="querying-elasticsearch">Querying Elasticsearch</h3>
 <p>Let&#39;s use the Sense console to make our queries. You can access Sense in your browser at <code>http://localhost:9200/_plugin/marvel/sense/index.html</code></p>
 <p>First you&#39;ll see an overlay with some helpful tips on using Sense. After that, you can see the left pane which has a default query in it. This query:</p>
-<pre><code class="lang-sh">{
+<pre><code class="lang-sh">GET /pride/_search
+{
   <span class="hljs-string">"query"</span>: {
     <span class="hljs-string">"match_all"</span>: {}
   }
 }
 </code></pre>
-<p>Will match everything. To restrict the search to a specific index, add the index to the url in the SERVER text box at the top. Let&#39;s query the <code>pride</code> index. To do this, you should have <code>localhost:9200/pride</code> in the SERVER text box at the top. To run the query, click the green triangle. </p>
+<p>Will match everything. To restrict the search to just our pride index, we&#39;ve added the line <code>GET /pride/_search</code> above our query object. To run the query, click the green triangle. </p>
 <p>You should see lots of results in the right pane. A total of 61 in fact (the number of chapters in Pride &amp; Prejudice).</p>
 <p>All Elasticsearch queries start out with this basic structure:</p>
-<pre><code class="lang-sh">{
+<pre><code class="lang-sh">GET /pride/_search
+{
     <span class="hljs-string">"query"</span>: {
 
     }
@@ -141,7 +145,8 @@
 <p>But for some reason, all of the examples in the documentation leave out this basic structure and the examples all start as if you&#39;re filling in the basic structure above with more details. So if you&#39;re copying from an example in the docs and you get a <code>SearchQueryParseException</code>, try wrapping your query with the above structure.</p>
 <h4 id="doesn-t-pride-and-prejudice-have-a-famous-line-">Doesn&#39;t Pride and Prejudice Have a Famous Line ?</h4>
 <p>Yes! And it has the words &quot;truth universally acknowledged&quot;. Let&#39;s search for that and see what chapter it appears in. </p>
-<pre><code class="lang-sh">{
+<pre><code class="lang-sh">GET /pride/_search
+{
     <span class="hljs-string">"query"</span>: {
         <span class="hljs-string">"match"</span>: {
            <span class="hljs-string">"_all"</span>: <span class="hljs-string">"truth universally acknowledged"</span>
@@ -150,7 +155,8 @@
 }
 </code></pre>
 <p>This looks similar to our first query, except that we&#39;ve added text to match. You should have 30 hits. Hmm, that didn&#39;t quite give us what we were looking for. Cruising through the text of the chapters we can see that it returned results for chapters that had any one of these three words. Let&#39;s try adding the <code>and</code> operator to the match query.</p>
-<pre><code class="lang-sh">{
+<pre><code class="lang-sh">GET /pride/_search
+{
     <span class="hljs-string">"query"</span>: {
         <span class="hljs-string">"match"</span>: {
            <span class="hljs-string">"_all"</span>: {
@@ -163,7 +169,8 @@
 </code></pre>
 <p>In this query, we&#39;ve added more attributes to the query, so instead of text as the value for the <code>_all</code> key, we have an object instead. This object has <code>query</code> and <code>operator</code> keys. The <code>query</code> is our actual text query, and the <code>operator</code> is the string &quot;and&quot; to tell elasticsearch we want all of these words to appear. </p>
 <p>This time, when we run the query we get two results. So, there are two chapters that have both &quot;truth&quot; and &quot;universally&quot; in them. But the words aren&#39;t necessarily next to each other. What we want now is a phrase query.</p>
-<pre><code class="lang-sh">{
+<pre><code class="lang-sh">GET /pride/_search
+{
     <span class="hljs-string">"query"</span>: {
         <span class="hljs-string">"match"</span>: {
            <span class="hljs-string">"_all"</span>: {
@@ -176,7 +183,8 @@
 </code></pre>
 <p>This query looks similar to the one above, but instead of using an operator, we&#39;re specifying a query <code>type</code> from a set of predefined types. In this case, it&#39;s <code>phrase</code>, indicating that not only do we want all these words to appear in the result, but we want them to be next to each other as well. This show&#39;s us one result, Chapter One. In fact, it&#39;s the first line of the book!</p>
 <p>OK, now let&#39;s say that I can&#39;t remember when Mr. Collins enters the story. Well that&#39;s easy, I&#39;ll just search for the phrase &quot;Mr. Collins&quot; just like above.</p>
-<pre><code class="lang-sh">{
+<pre><code class="lang-sh">GET /pride/_search
+{
     <span class="hljs-string">"query"</span>: {
         <span class="hljs-string">"match"</span>: {
            <span class="hljs-string">"text"</span>: {
@@ -188,7 +196,8 @@
 }
 </code></pre>
 <p>So this looks OK, except the chapters aren&#39;t ordered by their chapter number. I want to sort them in ascending order by the chapter attribute of each object. The sort key should be adjacent to your top level query object. Like this:</p>
-<pre><code class="lang-sh">{
+<pre><code class="lang-sh">GET /pride/_search
+{
     <span class="hljs-string">"query"</span>: {
         <span class="hljs-string">"match"</span>: {
            <span class="hljs-string">"text"</span>: {
@@ -203,6 +212,60 @@
 }
 </code></pre>
 <p>The sort key has an array of objects for its value. Each sort object has a key with the name of the attribute we&#39;re sorting by, and that key contains an object that describes the order of the sort. In this case, the order is &quot;asc&quot; for ascending. </p>
+<p>There are dozens of ways to query Elasticsearch. Try reading through all the different query types at <a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-queries.html">http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-queries.html</a> and trying some out for yourself!</p>
+<h3 id="filtering-in-elasticsearch">Filtering in Elasticsearch</h3>
+<p>Let&#39;s say we want to retrieve some specific chapters from the book. Since we&#39;re going to be selecting for specific values, a filter is most efficient. Here&#39;s an example that retrieves chapters 10-20. We can use a range filter.</p>
+<pre><code class="lang-sh">GET /pride/_search
+{
+    <span class="hljs-string">"query"</span>: {
+      <span class="hljs-string">"constant_score"</span> : {
+        <span class="hljs-string">"filter"</span> : {
+              <span class="hljs-string">"range"</span> : {
+                  <span class="hljs-string">"chapter"</span> : {
+                      <span class="hljs-string">"gte"</span>: <span class="hljs-number">10</span>,
+                      <span class="hljs-string">"lte"</span>: <span class="hljs-number">20</span>
+                  }
+              }
+          }
+      }
+    }
+}
+</code></pre>
+<p>This filters out chapters that are greater than or equal to 10 and less than or equal to 20. What if I want to combine this with a search? Well we can add a term filter for that. But once we add more than one filter, the structure gets a bit more complicated.</p>
+<pre><code class="lang-sh">GET /pride/_search
+{
+  <span class="hljs-string">"query"</span>: {
+    <span class="hljs-string">"filtered"</span> : {
+        <span class="hljs-string">"filter"</span> : {
+            <span class="hljs-string">"and"</span> : [
+                {
+                    <span class="hljs-string">"range"</span> : {
+                        <span class="hljs-string">"chapter"</span> : {
+                            <span class="hljs-string">"gte"</span> : <span class="hljs-number">10</span>,
+                            <span class="hljs-string">"lte"</span> : <span class="hljs-number">20</span>
+                        }
+                    }
+                },
+                {
+                    <span class="hljs-string">"term"</span> : { <span class="hljs-string">"text"</span> : <span class="hljs-string">"darcy"</span> }
+                }
+            ]
+        }
+    }
+  }
+}
+</code></pre>
+<p>Notice how we&#39;ve put each filter to be applied into an array with the key &quot;and&quot;. This means that we want all the filters to apply to the result set. The &quot;and&quot; array is nested inside a &quot;filter&quot; key, which is then nested inside a &quot;filtered&quot; key. And of course the whole thing is wrapped in a &quot;query&quot; object. </p>
+<p>Whew! As you can see the queries can get large and complicated, but the query DSL is powerful and specific enough to be used for pretty much any logical combination you can imagine. Continue reading about the different filters available here: <a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-filters.html">http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-filters.html</a></p>
+<h3 id="that-s-it-">That&#39;s It!</h3>
+<p>This covers the basics of installing and using Elasticsearch. Here are some more resources to keep you going:</p>
+<ul>
+<li><a href="http://exploringelasticsearch.com/">http://exploringelasticsearch.com/</a></li>
+<li><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index.html">http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index.html</a></li>
+<li><a href="http://www.elasticsearchtutorial.com/elasticsearch-in-5-minutes.html">http://www.elasticsearchtutorial.com/elasticsearch-in-5-minutes.html</a></li>
+<li>This repo: <a href="https://github.com/kaitlin/elasticsearch">https://github.com/kaitlin/elasticsearch</a></li>
+</ul>
+<p>Thanks for watching!</p>
       </section>
       <footer>
         <p>Project maintained by <a href="https://github.com/kaitlin">kaitlin</a></p>
