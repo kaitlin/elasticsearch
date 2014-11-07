@@ -42,9 +42,11 @@
         <h1>
 <a id="welcome-to-elasticsearch" class="anchor" href="#welcome-to-elasticsearch" aria-hidden="true"><span class="octicon octicon-link"></span></a>Welcome to Elasticsearch!</h1>
 
-<p>Elasticsearch is a full text search engine. It is a scalable, RESTful interface built on top of the Lucene search engine. In this class, we&#39;re going to go over the basics of:</p>
+<p>Elasticsearch is a full text search engine. It is a scalable, RESTful interface built on top of the Lucene search engine. </p>
+<p>Elasticsearch is similar to other search technology like Solr, in that they both run atop Lucene. However, Elasticsearch is optimized for scaling up and out, with built in management that allows one Elasticsearch index to be replicated across many machines. Compared to Lucene, Elasticsearch also has a RESTful API, which means any program that can communicate over http and parse JSON is able to easily interact with it. </p>
+<p>Elasticsearch stores data in indexes. You can have multiple indexes on a single installation of Elasticsearch. It&#39;s up to you, the user, to decide how to organize your data into different indices. </p>
+<p>In this class, we&#39;re going to go over the basics of:</p>
 <ul>
-<li>What Elasticsearch is</li>
 <li>How to install Elasticsearch</li>
 <li>How to load bulk data</li>
 <li>How to do some basic querying</li>
@@ -104,6 +106,103 @@
 </code></pre>
 <p>Hooray! Elasticsearch works! You can also visit <code>http://localhost:9200</code> in your web browser, and you should see the same response.</p>
 <h3 id="let-s-put-some-data-in-there">Let&#39;s Put Some Data in There</h3>
+<p>So that we can get started right away practicing querying, I&#39;ve created a bulk file of chapters from Jane Austen&#39;s Pride and Prejudice. You can download the file here: <a href="https://raw.githubusercontent.com/kaitlin/elasticsearch/gh-pages/pride.json">https://raw.githubusercontent.com/kaitlin/elasticsearch/gh-pages/pride.json</a></p>
+<p>Save the file somewhere you can <code>cd</code> into. Then we&#39;re going to do a bulk insert from the command line. After changing into the directory where you&#39;ve downloaded the file, run</p>
+<pre><code class="lang-sh">curl <span class="hljs-operator">-s</span> -XPOST localhost:<span class="hljs-number">9200</span>/pride/_bulk --data-binary @pride.json; <span class="hljs-built_in">echo</span>
+</code></pre>
+<p>This command looks similar to above, but we&#39;ve changed a few things. It follows this loose format:</p>
+<pre><code class="lang-sh">curl <span class="hljs-operator">-s</span> -XPOST HOSTNAME:PORT/INDEX_NAME/OPERATION_TYPE
+</code></pre>
+<p>Since we&#39;re sending data to Elasticsearch, we&#39;re using <code>-XPOST</code> instead of <code>-XGET</code>. Also, we&#39;ve added on to the url we&#39;re posting to. We&#39;ve decided to name the Elasticsearch index that&#39;s going to house this data <code>pride</code>, so we&#39;ve added that to the url path. And we&#39;re doing a bulk insert, so we&#39;ve also added <code>_bulk</code> to the url to let Elasticsearch know it should expect bulk data.</p>
+<p>the <code>--data-binary</code> argument tells curl that binary data is about to follow. <code>@pride.json</code> dumps the JSON data out of the file and into the upload stream. The semicolon <code>;</code> ends the command. Then we add another command, <code>echo</code> to tell our terminal to print out the response returned from Elasticsearch. </p>
+<p>You should see a response that looks something like this:</p>
+<pre><code class="lang-sh">{<span class="hljs-string">"took"</span>:<span class="hljs-number">2008</span>,<span class="hljs-string">"errors"</span>:<span class="hljs-literal">false</span>,<span class="hljs-string">"items"</span>:[{<span class="hljs-string">"index"</span>:{<span class="hljs-string">"_index"</span>:<span class="hljs-string">"pride"</span>,<span class="hljs-string">"_type"</span>:<span class="hljs-string">"chapter"</span>,<span class="hljs-string">"_id"</span>:<span class="hljs-string">"1"</span>,<span class="hljs-string">"_version"</span>:<span class="hljs-number">1</span>,<span class="hljs-string">"status"</span>:<span class="hljs-number">201</span>}},{<span class="hljs-string">"index"</span>:{<span class="hljs-string">"_index"</span>:<span class="hljs-string">"pride"</span>,<span class="hljs-string">"_type"</span>:<span class="hljs-string">"chapter"</span>,<span class="hljs-string">"_id"</span>:<span class="hljs-string">"2"</span>,<span class="hljs-string">"_version"</span>:<span class="hljs-number">1</span>,<span class="hljs-string">"status"</span>:<span class="hljs-number">201</span>}},{<span class="hljs-string">"index"</span>:{<span class="hljs-string">"_index"</span>:<span class="hljs-string">"pride"</span>,<span class="hljs-string">"_type"</span>:<span class="hljs-string">"chapter"</span>,<span class="hljs-string">"_id"</span>:<span class="hljs-string">"3"</span>,<span class="hljs-string">"_version"</span>:<span class="hljs-number">1</span>,<span class="hljs-string">"status"</span>:<span class="hljs-number">201</span>}},....
+</code></pre>
+<p>The response is JSON object that tells you no errors occured, and it enumerates the items that were inserted into Elasticsearch under the <code>items</code> key. Now we have some data to query.</p>
+<h3 id="querying-elasticsearch">Querying Elasticsearch</h3>
+<p>Let&#39;s use the Sense console to make our queries. You can access Sense in your browser at <code>http://localhost:9200/_plugin/marvel/sense/index.html</code></p>
+<p>First you&#39;ll see an overlay with some helpful tips on using Sense. After that, you can see the left pane which has a default query in it. This query:</p>
+<pre><code class="lang-sh">{
+  <span class="hljs-string">"query"</span>: {
+    <span class="hljs-string">"match_all"</span>: {}
+  }
+}
+</code></pre>
+<p>Will match everything. To restrict the search to a specific index, add the index to the url in the SERVER text box at the top. Let&#39;s query the <code>pride</code> index. To do this, you should have <code>localhost:9200/pride</code> in the SERVER text box at the top. To run the query, click the green triangle. </p>
+<p>You should see lots of results in the right pane. A total of 61 in fact (the number of chapters in Pride &amp; Prejudice).</p>
+<p>All Elasticsearch queries start out with this basic structure:</p>
+<pre><code class="lang-sh">{
+    <span class="hljs-string">"query"</span>: {
+
+    }
+}
+</code></pre>
+<p>This is important because there are soooo many different types of queries you can perform in Elasticsearch. The only way to get familiar with them all is to read the documentation on the Query DSL (DSL == Domain Specific Language) located here: <a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html">http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html</a></p>
+<p>But for some reason, all of the examples in the documentation leave out this basic structure and the examples all start as if you&#39;re filling in the basic structure above with more details. So if you&#39;re copying from an example in the docs and you get a <code>SearchQueryParseException</code>, try wrapping your query with the above structure.</p>
+<h4 id="doesn-t-pride-and-prejudice-have-a-famous-line-">Doesn&#39;t Pride and Prejudice Have a Famous Line ?</h4>
+<p>Yes! And it has the words &quot;truth universally acknowledged&quot;. Let&#39;s search for that and see what chapter it appears in. </p>
+<pre><code class="lang-sh">{
+    <span class="hljs-string">"query"</span>: {
+        <span class="hljs-string">"match"</span>: {
+           <span class="hljs-string">"_all"</span>: <span class="hljs-string">"truth universally acknowledged"</span>
+        }
+    }
+}
+</code></pre>
+<p>This looks similar to our first query, except that we&#39;ve added text to match. You should have 30 hits. Hmm, that didn&#39;t quite give us what we were looking for. Cruising through the text of the chapters we can see that it returned results for chapters that had any one of these three words. Let&#39;s try adding the <code>and</code> operator to the match query.</p>
+<pre><code class="lang-sh">{
+    <span class="hljs-string">"query"</span>: {
+        <span class="hljs-string">"match"</span>: {
+           <span class="hljs-string">"_all"</span>: {
+             <span class="hljs-string">"query"</span>: <span class="hljs-string">"truth universally"</span>,
+             <span class="hljs-string">"operator"</span>: <span class="hljs-string">"and"</span>
+           }
+        }
+    }
+}
+</code></pre>
+<p>In this query, we&#39;ve added more attributes to the query, so instead of text as the value for the <code>_all</code> key, we have an object instead. This object has <code>query</code> and <code>operator</code> keys. The <code>query</code> is our actual text query, and the <code>operator</code> is the string &quot;and&quot; to tell elasticsearch we want all of these words to appear. </p>
+<p>This time, when we run the query we get two results. So, there are two chapters that have both &quot;truth&quot; and &quot;universally&quot; in them. But the words aren&#39;t necessarily next to each other. What we want now is a phrase query.</p>
+<pre><code class="lang-sh">{
+    <span class="hljs-string">"query"</span>: {
+        <span class="hljs-string">"match"</span>: {
+           <span class="hljs-string">"_all"</span>: {
+             <span class="hljs-string">"query"</span>: <span class="hljs-string">"truth universally"</span>,
+             <span class="hljs-string">"type"</span>: <span class="hljs-string">"phrase"</span>
+           }
+        }
+    }
+}
+</code></pre>
+<p>This query looks similar to the one above, but instead of using an operator, we&#39;re specifying a query <code>type</code> from a set of predefined types. In this case, it&#39;s <code>phrase</code>, indicating that not only do we want all these words to appear in the result, but we want them to be next to each other as well. This show&#39;s us one result, Chapter One. In fact, it&#39;s the first line of the book!</p>
+<p>OK, now let&#39;s say that I can&#39;t remember when Mr. Collins enters the story. Well that&#39;s easy, I&#39;ll just search for the phrase &quot;Mr. Collins&quot; just like above.</p>
+<pre><code class="lang-sh">{
+    <span class="hljs-string">"query"</span>: {
+        <span class="hljs-string">"match"</span>: {
+           <span class="hljs-string">"text"</span>: {
+             <span class="hljs-string">"query"</span>: <span class="hljs-string">"Mr. Collins"</span>,
+             <span class="hljs-string">"type"</span>: <span class="hljs-string">"phrase"</span>
+           }
+        }
+    }
+}
+</code></pre>
+<p>So this looks OK, except the chapters aren&#39;t ordered by their chapter number. I want to sort them in ascending order by the chapter attribute of each object. The sort key should be adjacent to your top level query object. Like this:</p>
+<pre><code class="lang-sh">{
+    <span class="hljs-string">"query"</span>: {
+        <span class="hljs-string">"match"</span>: {
+           <span class="hljs-string">"text"</span>: {
+             <span class="hljs-string">"query"</span>: <span class="hljs-string">"Mr. Collins"</span>,
+             <span class="hljs-string">"type"</span>: <span class="hljs-string">"phrase"</span>
+           }
+        }
+    },
+    <span class="hljs-string">"sort"</span> : [
+      {<span class="hljs-string">"chapter"</span> : {<span class="hljs-string">"order"</span> : <span class="hljs-string">"asc"</span>}}
+    ]
+}
+</code></pre>
+<p>The sort key has an array of objects for its value. Each sort object has a key with the name of the attribute we&#39;re sorting by, and that key contains an object that describes the order of the sort. In this case, the order is &quot;asc&quot; for ascending. </p>
       </section>
       <footer>
         <p>Project maintained by <a href="https://github.com/kaitlin">kaitlin</a></p>
