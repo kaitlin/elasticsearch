@@ -42,42 +42,68 @@
         <h1>
 <a id="welcome-to-elasticsearch" class="anchor" href="#welcome-to-elasticsearch" aria-hidden="true"><span class="octicon octicon-link"></span></a>Welcome to Elasticsearch!</h1>
 
-<p>Elasticsearch is a full text search engine. It is a scalable, RESTful interface built on top of the Lucene search engine. In this class, we're going to go over the basics of:</p>
-
+<p>Elasticsearch is a full text search engine. It is a scalable, RESTful interface built on top of the Lucene search engine. In this class, we&#39;re going to go over the basics of:</p>
 <ul>
 <li>What Elasticsearch is</li>
 <li>How to install Elasticsearch</li>
 <li>How to load bulk data</li>
 <li>How to do some basic querying</li>
 </ul>
-
-<h3>
-<a id="requirements" class="anchor" href="#requirements" aria-hidden="true"><span class="octicon octicon-link"></span></a>Requirements</h3>
-
+<h3 id="requirements">Requirements</h3>
 <p>Elasticsearch requires Java 1.7 or higher. </p>
-
-<h4>
-<a id="for-mac-and-windows" class="anchor" href="#for-mac-and-windows" aria-hidden="true"><span class="octicon octicon-link"></span></a>For Mac and Windows</h4>
-
+<h4 id="for-mac-and-windows">For Mac and Windows</h4>
 <p>Visit this link:
 <a href="http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html">http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html</a> </p>
-
-<p>and select the distribution that matches your operating system. </p>
-
-<h4>
-<a id="for-ubuntu" class="anchor" href="#for-ubuntu" aria-hidden="true"><span class="octicon octicon-link"></span></a>For Ubuntu</h4>
-
+<p>and select the distribution that matches your operating system. Accept the license agreement, download and install Java.</p>
+<h4 id="windows-users-only">Windows Users Only</h4>
+<p>To interact with Elasticsearch, we&#39;ll be using a command line program called cURL. This is widely available on unix based operating systems, but not windows. The easiest way to install cURL is to install git (also useful for other things!). You can install git here: <a href="http://git-scm.com/download/win">http://git-scm.com/download/win</a></p>
+<p>When going through the install process make sure to select the option that says &quot;Install git and option unix tools&quot;. Once the installation is complete, you should be able to run the native Windows Powershell and the cURL command will be available. </p>
+<h4 id="for-ubuntu">For Ubuntu</h4>
 <p>For Ubuntu, you can paste the following into the command line:</p>
-
-<p><code>sudo add-apt-repository ppa:webupd8team/java</code></p>
-
-<p><code>sudo apt-get update</code></p>
-
-<p><code>sudo apt-get install oracle-java7-installer</code></p>
-
+<pre><code class="lang-sh"><span class="hljs-built_in">sudo</span> add-apt-repository ppa:webupd8team/java
+<span class="hljs-built_in">sudo</span> apt-get update
+<span class="hljs-built_in">sudo</span> apt-get install oracle-java7-installer
+</code></pre>
 <p>and to make sure it installed correctly, you can run:</p>
-
-<p><code>java -version</code></p>
+<pre><code class="lang-sh">java -version
+</code></pre>
+<h3 id="getting-elasticsearch">Getting Elasticsearch</h3>
+<p>You can download Elasticsearch here:
+<a href="http://www.elasticsearch.org/overview/elkdownloads/">http://www.elasticsearch.org/overview/elkdownloads/</a></p>
+<p>Once you&#39;ve downloaded it, extract the zip file. In your shell (terminal on Mac, Powershell on Windows), <code>cd</code> into the extracted directory and run</p>
+<pre><code class="lang-sh">./bin/plugin -i elasticsearch/marvel/latest
+</code></pre>
+<p>This will install the Marvel plugin, which has a more user friendly console (called Sense) that we can use to interact with Elasticsearch.</p>
+<h3 id="running-elasticsearch-">Running Elasticsearch!</h3>
+<p>In your shell in the same directory as above, run </p>
+<p>(Mac)</p>
+<pre><code class="lang-sh">./bin/elasticsearch
+</code></pre>
+<p>(Windows)</p>
+<pre><code class="lang-sh">./bin/elasticsearch.bat
+</code></pre>
+<p>You should see some output from Elasticsearch that should indicate that it&#39;s running. But let&#39;s query Elasticsearch to make sure! We&#39;ll do this two ways. From the command line and in the browser.</p>
+<p>Open a new tab in your terminal, and run</p>
+<pre><code class="lang-sh">curl -XGET http://localhost:<span class="hljs-number">9200</span>
+</code></pre>
+<p>curl is a command line tool to transfer data to and from a server over a variety of protocols, but in this case it&#39;s using http, just like most internet traffic does. the <code>-XGET</code> argument tells curl we want to perform a GET operation on the server, and <code>http://localhost:9200</code> is the default address of Elasticsearch. </p>
+<p>Most server software that you run on your machine will show up at <code>http://localhost/</code> and most software has a default port number where it listens for requests. For Elasticsearch, the default port is <code>9200</code>, but really you can run it on any port you like. </p>
+<p>The response should look like this (with a different name though)</p>
+<pre><code class="lang-sh">{
+  <span class="hljs-string">"status"</span> : <span class="hljs-number">200</span>,
+  <span class="hljs-string">"name"</span> : <span class="hljs-string">"Jack Frost"</span>,
+  <span class="hljs-string">"version"</span> : {
+    <span class="hljs-string">"number"</span> : <span class="hljs-string">"1.3.4"</span>,
+    <span class="hljs-string">"build_hash"</span> : <span class="hljs-string">"a70f3ccb52200f8f2c87e9c370c6597448eb3e45"</span>,
+    <span class="hljs-string">"build_timestamp"</span> : <span class="hljs-string">"2014-09-30T09:07:17Z"</span>,
+    <span class="hljs-string">"build_snapshot"</span> : <span class="hljs-literal">false</span>,
+    <span class="hljs-string">"lucene_version"</span> : <span class="hljs-string">"4.9"</span>
+  },
+  <span class="hljs-string">"tagline"</span> : <span class="hljs-string">"You Know, for Search"</span>
+}
+</code></pre>
+<p>Hooray! Elasticsearch works! You can also visit <code>http://localhost:9200</code> in your web browser, and you should see the same response.</p>
+<h3 id="let-s-put-some-data-in-there">Let&#39;s Put Some Data in There</h3>
       </section>
       <footer>
         <p>Project maintained by <a href="https://github.com/kaitlin">kaitlin</a></p>
